@@ -8,92 +8,20 @@
 #include <vector>
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>       /* time */
+#include <glm/vec3.hpp> // glm::vec3
+#include <glm/vec4.hpp> // glm::vec4
+#include <glm/mat4x4.hpp> // glm::mat4
+#include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 
 class cube;
 
 std::vector<cube> cubes;
 
-void rotX(float* m, int nrvectors, float r) {
-	float rot[] = {
-		1.f, 0.f, 0.f,
-		0.f, cos(r), -sin(r),
-		0.f, sin(r), cos(r)
-	};
-
-	float tmp[3];
-
-	for (int i = 0; i < nrvectors - 2; i += 3) {
-		tmp[0] = rot[0] * m[i] + rot[1] * m[i + 1] + rot[2] * m[i + 2];
-		tmp[1] = rot[3] * m[i] + rot[4] * m[i + 1] + rot[5] * m[i + 2];
-		tmp[2] = rot[6] * m[i] + rot[7] * m[i + 1] + rot[8] * m[i + 2];
-
-		m[i] = tmp[0];
-		m[i + 1] = tmp[1];
-		m[i + 2] = tmp[2];
-	}
-}
-
-void rotY(float* m, int nrvectors, float r) {
-	float rot[] = {
-		cos(r), 0.f, sin(r),
-		0.f,	1.f, 0.f,
-		-sin(r), 0, cos(r)
-	};
-
-	float tmp[3];
-
-	for (int i = 0; i < nrvectors - 2; i += 3) {
-		tmp[0] = rot[0] * m[i] + rot[1] * m[i + 1] + rot[2] * m[i + 2];
-		tmp[1] = rot[3] * m[i] + rot[4] * m[i + 1] + rot[5] * m[i + 2];
-		tmp[2] = rot[6] * m[i] + rot[7] * m[i + 1] + rot[8] * m[i + 2];
-
-		m[i] = tmp[0];
-		m[i + 1] = tmp[1];
-		m[i + 2] = tmp[2];
-	}
-}
-
-void rotZ(float* m, int nrvectors, float r) {
-	float rot[] = {
-		cos(r), -sin(r), 0.f,
-		sin(r), cos(r), 0.f,
-		0.f, 0.f, 1.f
-	};
-
-	float tmp[3];
-
-	for (int i = 0; i < nrvectors - 2; i += 3) {
-		tmp[0] = rot[0] * m[i] + rot[1] * m[i + 1] + rot[2] * m[i + 2];
-		tmp[1] = rot[3] * m[i] + rot[4] * m[i + 1] + rot[5] * m[i + 2];
-		tmp[2] = rot[6] * m[i] + rot[7] * m[i + 1] + rot[8] * m[i + 2];
-
-		m[i] = tmp[0];
-		m[i + 1] = tmp[1];
-		m[i + 2] = tmp[2];
-	}
-}
-
-void translate(float* m, int nrvectors, float* p) {
-
-	/*Initial translation of cube*/
-	for (int i = 0; i < nrvectors * 3; i += 3) {
-		m[i] += p[0];
-		m[i + 1] += p[1];
-		m[i + 2] += p[2];
-	}
-}
-
-void crossProduct(float v1[], float v2[], float vR[]) {
-	vR[0] = ((v1[1] * v2[2]) - (v1[2] * v2[1]));
-	vR[1] = -((v1[0] * v2[2]) - (v1[2] * v2[0]));
-	vR[2] = ((v1[0] * v2[1]) - (v1[1] * v2[0]));
-};
-
 class phys {
 public:
-	float m_p[3];
-	float m_v[3];
-	float m_a[3];
+	glm::vec3 m_p;
+	glm::vec3 m_v;
+	glm::vec3 m_a;
 
 	float m_roll;
 	float m_pitch;
@@ -104,8 +32,8 @@ public:
 
 class cube : phys {
 private:
-	float m_points[108];
-	float m_colours[108];
+	glm::vec3 m_points[36];
+	glm::vec3 m_colours[36];
 
 	GLuint m_pvbo;
 	GLuint m_cvbo;
@@ -113,154 +41,131 @@ private:
 	static int nrOfCubes;
 	int m_id;
 public:
-	cube(std::vector<float> pos, std::vector<float> rot) {
+	cube(glm::vec3 pos) {
+		m_p = pos;
 		m_id = nrOfCubes++;
 
 		m_pvbo = m_id;
 		m_cvbo = m_id;
 
 		/*Predefined points of cube*/
-		float points[108] = {
-			-1.0f,-1.0f,-1.0f, // triangle 1 : begin
-			-1.0f,-1.0f, 1.0f,
-			-1.0f, 1.0f, 1.0f, // triangle 1 : end
-			1.0f, 1.0f,-1.0f, // triangle 2 : begin
-			-1.0f,-1.0f,-1.0f,
-			-1.0f, 1.0f,-1.0f, // triangle 2 : end
-			1.0f,-1.0f, 1.0f,
-			-1.0f,-1.0f,-1.0f,
-			1.0f,-1.0f,-1.0f,
-			1.0f, 1.0f,-1.0f,
-			1.0f,-1.0f,-1.0f,
-			-1.0f,-1.0f,-1.0f,
-			-1.0f,-1.0f,-1.0f,
-			-1.0f, 1.0f, 1.0f,
-			-1.0f, 1.0f,-1.0f,
-			1.0f,-1.0f, 1.0f,
-			-1.0f,-1.0f, 1.0f,
-			-1.0f,-1.0f,-1.0f,
-			-1.0f, 1.0f, 1.0f,
-			-1.0f,-1.0f, 1.0f,
-			1.0f,-1.0f, 1.0f,
-			1.0f, 1.0f, 1.0f,
-			1.0f,-1.0f,-1.0f,
-			1.0f, 1.0f,-1.0f,
-			1.0f,-1.0f,-1.0f,
-			1.0f, 1.0f, 1.0f,
-			1.0f,-1.0f, 1.0f,
-			1.0f, 1.0f, 1.0f,
-			1.0f, 1.0f,-1.0f,
-			-1.0f, 1.0f,-1.0f,
-			1.0f, 1.0f, 1.0f,
-			-1.0f, 1.0f,-1.0f,
-			-1.0f, 1.0f, 1.0f,
-			1.0f, 1.0f, 1.0f,
-			-1.0f, 1.0f, 1.0f,
-			1.0f,-1.0f, 1.0f
+		glm::vec3 points[36] = {
+			{-1.0f,-1.0f,-1.0f}, // triangle 1 : begin
+			{-1.0f,-1.0f, 1.0f},
+			{-1.0f, 1.0f, 1.0f}, // triangle 1 : end
+			{1.0f, 1.0f,-1.0f}, // triangle 2 : begin
+			{-1.0f,-1.0f,-1.0f},
+			{-1.0f, 1.0f,-1.0f}, // triangle 2 : end
+			{1.0f,-1.0f, 1.0f},
+			{-1.0f,-1.0f,-1.0f},
+			{1.0f,-1.0f,-1.0f},
+			{1.0f, 1.0f,-1.0f},
+			{1.0f,-1.0f,-1.0f},
+			{-1.0f,-1.0f,-1.0f},
+			{-1.0f,-1.0f,-1.0f},
+			{-1.0f, 1.0f, 1.0f},
+			{-1.0f, 1.0f,-1.0f},
+			{1.0f,-1.0f, 1.0f},
+			{-1.0f,-1.0f, 1.0f},
+			{-1.0f,-1.0f,-1.0f},
+			{-1.0f, 1.0f, 1.0f},
+			{-1.0f,-1.0f, 1.0f},
+			{1.0f,-1.0f, 1.0f},
+			{1.0f, 1.0f, 1.0f},
+			{1.0f,-1.0f,-1.0f},
+			{1.0f, 1.0f,-1.0f},
+			{1.0f,-1.0f,-1.0f},
+			{1.0f, 1.0f, 1.0f},
+			{1.0f,-1.0f, 1.0f},
+			{1.0f, 1.0f, 1.0f},
+			{1.0f, 1.0f,-1.0f},
+			{-1.0f, 1.0f,-1.0f},
+			{1.0f, 1.0f, 1.0f},
+			{-1.0f, 1.0f,-1.0f},
+			{-1.0f, 1.0f, 1.0f},
+			{1.0f, 1.0f, 1.0f},
+			{-1.0f, 1.0f, 1.0f},
+			{1.0f,-1.0f, 1.0f}
 		};
 
 		/*Scaler*/
 		for (auto& a : points) {
-			a = a / 10;
+			a = a * 0.1f;
 		}
 
 		/*Predefined colors of cube*/
-		float colours[108] = {
+		glm::vec3 colours[36] = {
 			/*1.first*/
-			0.0f, 0.0f,  1.0f,
-			0.0f, 0.0f,  1.0f,
-			0.0f, 0.0f,  1.0f,
+			{0.0f, 0.0f,  1.0f},
+			{0.0f, 0.0f,  1.0f},
+			{0.0f, 0.0f,  1.0f},
 
 			/*2.first*/
-			0.0f, 1.0f,  0.0f,
-			0.0f, 1.0f,  0.0f,
-			0.0f, 1.0f,  0.0f,
+			{0.0f, 1.0f,  0.0f},
+			{0.0f, 1.0f,  0.0f},
+			{0.0f, 1.0f,  0.0f},
 
 			/*3.first*/
-			1.0f, 0.0f,  0.0f,
-			1.0f, 0.0f,  0.0f,
-			1.0f, 0.0f,  0.0f,
+			{1.0f, 0.0f,  0.0f},
+			{1.0f, 0.0f,  0.0f},
+			{1.0f, 0.0f,  0.0f},
 
 			/*2.last*/
-			0.0f, 1.0f,  0.0f,
-			0.0f, 1.0f,  0.0f,
-			0.0f, 1.0f,  0.0f,
+			{0.0f, 1.0f,  0.0f},
+			{0.0f, 1.0f,  0.0f},
+			{0.0f, 1.0f,  0.0f},
 
 			/*1.last*/
-			0.0f, 0.0f,  1.0f,
-			0.0f, 0.0f,  1.0f,
-			0.0f, 0.0f,  1.0f,
+			{0.0f, 0.0f,  1.0f},
+			{0.0f, 0.0f,  1.0f},
+			{0.0f, 0.0f,  1.0f},
 
 			/*3.last*/
-			1.0f, 0.0f,  0.0f,
-			1.0f, 0.0f,  0.0f,
-			1.0f, 0.0f,  0.0f,
+			{1.0f, 0.0f,  0.0f},
+			{1.0f, 0.0f,  0.0f},
+			{1.0f, 0.0f,  0.0f},
 
 			/*4.first*/
-			0.0f, 1.0f,  0.0f,
-			0.0f, 1.0f,  0.0f,
-			0.0f, 1.0f,  0.0f,
+			{0.0f, 1.0f,  0.0f},
+			{0.0f, 1.0f,  0.0f},
+			{0.0f, 1.0f,  0.0f},
 
 			/*5.first*/
-			0.0f, 0.0f,  1.0f,
-			0.0f, 0.0f,  1.0f,
-			0.0f, 0.0f,  1.0f,
+			{0.0f, 0.0f,  1.0f},
+			{0.0f, 0.0f,  1.0f},
+			{0.0f, 0.0f,  1.0f},
 
 			/*5.last*/
-			0.0f, 0.0f,  1.0f,
-			0.0f, 0.0f,  1.0f,
-			0.0f, 0.0f,  1.0f,
+			{0.0f, 0.0f,  1.0f},
+			{0.0f, 0.0f,  1.0f},
+			{0.0f, 0.0f,  1.0f},
 
 			/*6.first*/
-			1.0f, 0.0f,  0.0f,
-			1.0f, 0.0f,  0.0f,
-			1.0f, 0.0f,  0.0f,
+			{1.0f, 0.0f,  0.0f},
+			{1.0f, 0.0f,  0.0f},
+			{1.0f, 0.0f,  0.0f},
 
 			/*6.last*/
-			1.0f, 0.0f,  0.0f,
-			1.0f, 0.0f,  0.0f,
-			1.0f, 0.0f,  0.0f,
+			{1.0f, 0.0f,  0.0f},
+			{1.0f, 0.0f,  0.0f},
+			{1.0f, 0.0f,  0.0f},
 
 			/*4.last*/
-			0.0f, 1.0f,  0.0f,
-			0.0f, 1.0f,  0.0f,
-			0.0f, 1.0f,  0.0f
+			{0.0f, 1.0f,  0.0f},
+			{0.0f, 1.0f,  0.0f},
+			{0.0f, 1.0f,  0.0f}
 		};
-
-		m_p[0] = pos.at(0);
-		m_p[1] = pos.at(1);
-		m_p[2] = pos.at(2);
-
-		m_v[0] = 0.f;
-		m_v[1] = 0.f;
-		m_v[2] = 0.f;
-
-		m_a[0] = 0.f;
-		m_a[1] = 0.f;
-		m_a[2] = 0.f;
-
-		m_roll = rot.at(0);
-		m_pitch = rot.at(1);
-		m_yaw = rot.at(2);
+		
+		/*Translating into initial position*/
+		for (auto& a : points) {
+			a = a + m_p;
+		}
 
 		memcpy(m_points, points, sizeof(points));
 		memcpy(m_colours, colours, sizeof(colours));
 
-		/*Initial translation of cube*/
-		translate(m_points, sizeof(m_points) / (sizeof(float) * 3), m_p);
-
 		glGenBuffers(1, &m_pvbo);
-		glBindBuffer(GL_ARRAY_BUFFER, m_pvbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(m_points), m_points, GL_STATIC_DRAW);
-
 		glGenBuffers(1, &m_cvbo);
-		glBindBuffer(GL_ARRAY_BUFFER, m_cvbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(m_colours), m_colours, GL_STATIC_DRAW);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_pvbo);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-		glBindBuffer(GL_ARRAY_BUFFER, m_cvbo);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	}
 
 	int getNumberOfPoints() {
@@ -277,55 +182,7 @@ public:
 		m_p[2] = z;
 	}
 
-	void update(float ts) {
-		float inverted_p[] = { -m_p[0], -m_p[1], -m_p[2] };
-
-		translate(m_points, sizeof(m_points) / (sizeof(float) * 3), inverted_p);
-		rotX(m_points, sizeof(m_points) / sizeof(float), m_roll * ts);
-		rotY(m_points, sizeof(m_points) / sizeof(float), m_yaw * ts);
-		rotZ(m_points, sizeof(m_points) / sizeof(float), m_pitch * ts);
-
-		//m_a[1] = -1.0;
-
-		m_p[0] += m_v[0] * ts;
-		m_p[1] += m_v[1] * ts;
-		m_p[2] += m_v[2] * ts;
-
-		m_v[0] += m_a[0] * ts;
-		m_v[1] += m_a[1] * ts;
-		m_v[2] += m_a[2] * ts;
-
-		for (int pnt = 0; pnt < sizeof(m_points) / sizeof(float); pnt += 3) {
-			if (m_points[pnt + 1] + m_p[1] <= -1.0 && m_v[1] < 0.0) {
-				m_v[1] = -1.0 * m_v[1] * 0.90f;
-				//m_v[1] = 0.1f;
-				float p_pnt[] = { m_points[pnt], m_points[pnt + 1], m_points[pnt + 2] };
-				float inverted_p_pnt[] = { -p_pnt[0], -p_pnt[1], -p_pnt[2] };
-
-				translate(m_points, sizeof(m_points) / (sizeof(float) * 3), inverted_p_pnt);
-
-				float m0m1[] = { m_p[0] - m_v[0], m_p[1] - m_v[1], m_p[2] - m_v[2] };
-				float m0m1s[3];
-
-				crossProduct(m0m1, m_v, m0m1s);
-
-				float absm0m1s = std::sqrt(m0m1s[0] * m0m1s[0] + m0m1s[1] * m0m1s[1] + m0m1s[2] * m0m1s[2]);
-				float absm_v = std::sqrt(m_v[0] * m_v[0] + m_v[1] * m_v[1] + m_v[2] * m_v[2]);
-
-				float d = absm0m1s / absm_v;
-
-				m_roll = (m0m1s[1] + m0m1s[2]) / d;
-				m_pitch = (m0m1s[0] + m0m1s[2]) / d;
-				m_yaw = (m0m1s[0] + m0m1s[1]) / d;
-
-				translate(m_points, sizeof(m_points) / (sizeof(float) * 3), p_pnt);
-
-				break;
-			}
-		}
-
-		translate(m_points, sizeof(m_points) / (sizeof(float) * 3), m_p);
-
+	void show() {
 		glBindBuffer(GL_ARRAY_BUFFER, m_pvbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(m_points), m_points, GL_STATIC_DRAW);
 
@@ -337,6 +194,8 @@ public:
 
 		glBindBuffer(GL_ARRAY_BUFFER, m_cvbo);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+		glDrawArrays(GL_TRIANGLES, 0, getNumberOfPoints() / 3);
 	}
 };
 
@@ -351,9 +210,6 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 	mpos_x = xpos;
 	mpos_y = ypos;
 
-	//gluLookAt(xpos, ypos, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-	int lastIndex = cube::getNumberOfCubes() - 1;
-	cubes.at(lastIndex).setPos(mpos_x/W, mpos_y/H, 0.0);
 	std::cout << "X: " << xpos << " Y: " << ypos << std::endl;
 }
 
@@ -369,13 +225,13 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
 	switch (key) {
 	case GLFW_KEY_1: {
-		cube tmp_cube({ rand_x, rand_y , rand_z }, { rand_rot_x * 3.1415f / 2.0f, rand_rot_y * 3.1415f / 2.0f, rand_rot_z * 3.1415f / 2.0f });
+		cube tmp_cube({ rand_x, rand_y , rand_z });
 
 		cubes.push_back(tmp_cube);
 	}
 					 break;
 	case GLFW_KEY_2: {
-		cube tmp_cube({ (mpos_x / (float)W) * 2.0f - 1.0f, 1.0f - (mpos_y / (float)H) * 2.0f, 0.0f }, { rand_rot_x * 3.1415f / 2.0f, rand_rot_y * 3.1415f / 2.0f, rand_rot_z * 3.1415f / 2.0f });
+		cube tmp_cube({ (mpos_x / (float)W) * 2.0f - 1.0f, 1.0f - (mpos_y / (float)H) * 2.0f, 0.0f });
 
 		cubes.push_back(tmp_cube);
 	}
@@ -449,14 +305,14 @@ int main() {
 		float rand_rot_y = ((float)rand() / (RAND_MAX)) - 0.5f;
 		float rand_rot_z = ((float)rand() / (RAND_MAX)) - 0.5f;
 
-		cube tmp_cube({ r * (float)cos(i * (2 * 3.1415 / nrcubes)), r * (float)sin(i * (2 * 3.1415 / nrcubes)), 0.0f }, { rand_rot_x * 3.1415f / 2.0f, rand_rot_y * 3.1415f / 2.0f, 0.f });//{ 3.1415f / 2.0f, 3.1415f / 2.0f, 3.1415f / 2.0f });
+		cube tmp_cube({ r * (float)cos(i * (2 * 3.1415 / nrcubes)), r * (float)sin(i * (2 * 3.1415 / nrcubes)), 0.0f });//{ 3.1415f / 2.0f, 3.1415f / 2.0f, 3.1415f / 2.0f });
 		//cube tmp_cube({ r*(float)cos(i*(2 * 3.1415 / nrcubes)), r*(float)sin(i*(2 * 3.1415 / nrcubes)), 0.0f }, { rand_rot_x * 3.1415f / 2.0f, rand_rot_y * 3.1415f / 2.0f, rand_rot_z * 3.1415f / 2.0f });//{ 3.1415f / 2.0f, 3.1415f / 2.0f, 3.1415f / 2.0f });
 
 		cubes.push_back(tmp_cube);
 	}
 
-	cube tmp_cube({ 0,0,0 }, { 0,0,0 });
-	cube tmp_cube2({ 0,0.1,0.1 }, { 5,0,5 });
+	cube tmp_cube({ 0,0,0 });
+	cube tmp_cube2({ 0,0.1,0.1 });
 	cubes.push_back(tmp_cube);
 	cubes.push_back(tmp_cube2);
 
@@ -535,14 +391,8 @@ int main() {
 		glBufferData(GL_ARRAY_BUFFER, sizeof(colours), colours, GL_STATIC_DRAW);*/
 
 		for (cube& a : cubes) {
-			a.update((float)timeStepMs / 1000.0);
-
-
-			glDrawArrays(GL_TRIANGLES, 0, a.getNumberOfPoints() / 3);
+			a.show();
 		}
-
-
-
 
 		/*c.update();
 
