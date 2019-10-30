@@ -13,6 +13,7 @@
 #include <glm/mat4x4.hpp> // glm::mat4
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 
+GLuint shaderProgram;
 class cube;
 
 std::vector<cube> cubes;
@@ -42,11 +43,14 @@ private:
 	int m_id;
 public:
 	cube(glm::vec3 pos) {
-		m_p = pos;
-		m_id = nrOfCubes++;
-
 		m_pvbo = m_id;
 		m_cvbo = m_id;
+
+		glGenBuffers(1, &m_pvbo);
+		glGenBuffers(1, &m_cvbo);
+
+		m_p = pos;
+		m_id = nrOfCubes++;
 
 		/*Predefined points of cube*/
 		glm::vec3 points[36] = {
@@ -90,7 +94,7 @@ public:
 
 		/*Scaler*/
 		for (auto& a : points) {
-			a = a * 0.1f;
+			a = a * 0.2f;
 		}
 
 		/*Predefined colors of cube*/
@@ -163,9 +167,6 @@ public:
 
 		memcpy(m_points, points, sizeof(points));
 		memcpy(m_colours, colours, sizeof(colours));
-
-		glGenBuffers(1, &m_pvbo);
-		glGenBuffers(1, &m_cvbo);
 	}
 
 	int getNumberOfPoints() {
@@ -209,6 +210,14 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 {
 	mpos_x = xpos;
 	mpos_y = ypos;
+
+	glm::mat4 projectionMatrix = glm::perspective(90.0f, ((float)W / (float)H), 0.2f, 10.0f);
+	glm::mat4 projectionTranslationMatrix = glm::translate(projectionMatrix, glm::vec3(0.0f, 0.0f, -3.0f));
+	projectionTranslationMatrix = glm::rotate(projectionTranslationMatrix, (float)((mpos_y / H) * 3.1415 * 2 - 3.1415), glm::vec3(1, 0, 0));
+	glm::mat4 fullTransformMatrix = glm::rotate(projectionTranslationMatrix, (float)((mpos_x / W) * 3.1415 * 2 - 3.1415), glm::vec3(0, 1, 0));
+
+	GLint fullTransformMatrixUniformLocation = glGetUniformLocation(shaderProgram, "fullTransformMatrix");
+	glUniformMatrix4fv(fullTransformMatrixUniformLocation, 1, GL_FALSE, &fullTransformMatrix[0][0]);
 
 	std::cout << "X: " << xpos << " Y: " << ypos << std::endl;
 }
@@ -297,34 +306,37 @@ int main() {
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 
-	float r = 0.5f;
-	int nrcubes = 10;
+	int nrcubes = 64;
+
+	int row = 0;
+	int col = 0;
 
 	for (int i = 0; i < nrcubes; i++) {
-		float rand_rot_x = ((float)rand() / (RAND_MAX)) - 0.5f;
-		float rand_rot_y = ((float)rand() / (RAND_MAX)) - 0.5f;
-		float rand_rot_z = ((float)rand() / (RAND_MAX)) - 0.5f;
+		col = i % 4;
+		if (col == 0) {
+			row++;
+		}
 
-		cube tmp_cube({ r * (float)cos(i * (2 * 3.1415 / nrcubes)), r * (float)sin(i * (2 * 3.1415 / nrcubes)), 0.0f });//{ 3.1415f / 2.0f, 3.1415f / 2.0f, 3.1415f / 2.0f });
-		//cube tmp_cube({ r*(float)cos(i*(2 * 3.1415 / nrcubes)), r*(float)sin(i*(2 * 3.1415 / nrcubes)), 0.0f }, { rand_rot_x * 3.1415f / 2.0f, rand_rot_y * 3.1415f / 2.0f, rand_rot_z * 3.1415f / 2.0f });//{ 3.1415f / 2.0f, 3.1415f / 2.0f, 3.1415f / 2.0f });
+		cube tmp_cube({ col*0.8, 0.0f,  -row * 0.8 + 4 });
 
 		cubes.push_back(tmp_cube);
 	}
 
-	cube tmp_cube({ 0,0,0 });
+	/*cube tmp_cube({ 0,0,0 });
 	cube tmp_cube2({ 0,0.1,0.1 });
 	cubes.push_back(tmp_cube);
-	cubes.push_back(tmp_cube2);
+	cubes.push_back(tmp_cube2);*/
 
 
 	const char* vertex_shader =
 		"#version 400\n"
 		"layout(location = 0) in vec3 vertex_position;"
 		"layout(location = 1) in vec3 vertex_colour;"
+		"uniform mat4 fullTransformMatrix;"
 		"out vec3 colour;"
 		"void main() {"
 		"	colour = vertex_colour;"
-		"	gl_Position = vec4(vertex_position, 1.0);"
+		"	gl_Position = fullTransformMatrix * vec4(vertex_position, 1.0);"
 		"};";
 
 	const char* fragment_shader =
@@ -342,15 +354,15 @@ int main() {
 	glShaderSource(fs, 1, &fragment_shader, NULL);
 	glCompileShader(fs);
 
-	GLuint shader_programme = glCreateProgram();
-	glAttachShader(shader_programme, fs);
-	glAttachShader(shader_programme, vs);
+	shaderProgram = glCreateProgram();
+	glAttachShader(shaderProgram, fs);
+	glAttachShader(shaderProgram, vs);
 
 	// insert location binding code here
-	glBindAttribLocation(shader_programme, 0, "vertex_position");
-	glBindAttribLocation(shader_programme, 1, "vertex_colour");
+	glBindAttribLocation(shaderProgram, 0, "vertex_position");
+	glBindAttribLocation(shaderProgram, 1, "vertex_colour");
 
-	glLinkProgram(shader_programme);
+	glLinkProgram(shaderProgram);
 
 	//
 
@@ -377,7 +389,7 @@ int main() {
 
 		//printf("Loop: %d\n", loops);
 
-		glUseProgram(shader_programme);
+		glUseProgram(shaderProgram);
 		glBindVertexArray(vao);
 
 		/*rotY(points, sizeof(points) / sizeof(float), 0.02);
