@@ -31,6 +31,55 @@ public:
 	phys() {};
 };
 
+class quad {
+public:
+	glm::vec3 m_pos;
+	GLuint m_pvbo;
+	GLuint m_cvbo;
+	glm::vec3 m_points[4];
+	glm::vec3 m_colors[4];
+
+	quad() {
+		glGenBuffers(1, &m_pvbo);
+		glGenBuffers(1, &m_cvbo);
+	}
+
+	void genVertex(uint8_t size) {
+		m_points[0] = { 0, 0, 0 };
+		m_points[1] = { size, 0 , 0 };
+		m_points[2] = { size, 0, size };
+		m_points[3] = { 0, 0, size };
+
+		/*Translating into initial position*/
+		for (auto& a : m_points) {
+			a = a + m_pos;
+		}
+	}
+
+	void genColor(glm::vec3 color) {
+		m_colors[0] = color;
+		m_colors[1] = color;
+		m_colors[2] = color;
+		m_colors[3] = color;
+	}
+
+	void show() {
+		glBindBuffer(GL_ARRAY_BUFFER, m_pvbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(m_points), m_points, GL_STATIC_DRAW);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_cvbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(m_colors), m_colors, GL_STATIC_DRAW);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_pvbo);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_cvbo);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+		glDrawArrays(GL_QUADS, 0, 4);
+	}
+};
+
 class cube : phys {
 private:
 	glm::vec3 m_points[36];
@@ -200,6 +249,7 @@ public:
 	}
 };
 
+
 int cube::nrOfCubes = 0;
 float mpos_x = 0.0;
 float mpos_y = 0.0;
@@ -211,7 +261,7 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 	mpos_x = xpos;
 	mpos_y = ypos;
 
-	glm::mat4 projectionMatrix = glm::perspective(90.0f, ((float)W / (float)H), 0.2f, 10.0f);
+	glm::mat4 projectionMatrix = glm::perspective(90.0f, ((float)W / (float)H), 0.2f, 100.0f);
 	glm::mat4 projectionTranslationMatrix = glm::translate(projectionMatrix, glm::vec3(0.0f, 0.0f, -3.0f));
 	projectionTranslationMatrix = glm::rotate(projectionTranslationMatrix, (float)((mpos_y / H) * 3.1415 * 2 - 3.1415), glm::vec3(1, 0, 0));
 	glm::mat4 fullTransformMatrix = glm::rotate(projectionTranslationMatrix, (float)((mpos_x / W) * 3.1415 * 2 - 3.1415), glm::vec3(0, 1, 0));
@@ -306,27 +356,24 @@ int main() {
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 
-	int nrcubes = 64;
-
 	int row = 0;
 	int col = 0;
+	int cols = 6;
 
-	for (int i = 0; i < nrcubes; i++) {
-		col = i % 4;
-		if (col == 0) {
+	std::vector<quad> quads;
+
+	for (int i = 0; i < 2000; i++) {
+		quad newQuad;
+		if (i % cols == 0) {
 			row++;
-		}
+		};
 
-		cube tmp_cube({ col*0.8, 0.0f,  -row * 0.8 + 4 });
+		newQuad.m_pos = { (i % cols) * 1.1 - cols/2, 1, -row*1.1 };
+		newQuad.genVertex(1);
+		newQuad.genColor({ 1,0,0 });
 
-		cubes.push_back(tmp_cube);
+		quads.push_back(newQuad);
 	}
-
-	/*cube tmp_cube({ 0,0,0 });
-	cube tmp_cube2({ 0,0.1,0.1 });
-	cubes.push_back(tmp_cube);
-	cubes.push_back(tmp_cube2);*/
-
 
 	const char* vertex_shader =
 		"#version 400\n"
@@ -402,7 +449,7 @@ int main() {
 		glBindBuffer(GL_ARRAY_BUFFER, colours_vbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(colours), colours, GL_STATIC_DRAW);*/
 
-		for (cube& a : cubes) {
+		for (quad& a : quads) {
 			a.show();
 		}
 
