@@ -279,7 +279,7 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 	std::cout << "X: " << xpos << " Y: " << ypos << std::endl;
 }
 
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	float rand_x = ((float)rand() / (RAND_MAX)) - 0.5f;
 	float rand_y = ((float)rand() / (RAND_MAX)) - 0.5f;
@@ -297,6 +297,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 		}
 	));
 	glm::vec3 strafeVector = lookVector;
+	std::cout << "@@@@@@@@@@" << std::endl;
 
 	switch (key) {
 	case GLFW_KEY_1: {
@@ -388,7 +389,7 @@ int main() {
 
 	glfwSetCursorPosCallback(window, cursor_position_callback);
 	//Sets the key callback
-	glfwSetKeyCallback(window, key_callback);
+	glfwSetKeyCallback(window, keyCallback);
 
 	// start GLEW extension handler
 	glewExperimental = GL_TRUE;
@@ -404,11 +405,11 @@ int main() {
 
 	int row = 0;
 	int col = 0;
-	int cols = 12;
+	int cols = 100;
 
 	std::vector<quad> quads;
 
-	for (int i = 0; i < 200; i++) {
+	for (int i = 0; i < 20000; i++) {
 		quad newQuad;
 		if (i % cols == 0) {
 			row++;
@@ -489,12 +490,14 @@ int main() {
 
 
 		for (quad& a : quads) {
-			a.show();
+			if (glm::distance(a.m_pos, -worldPosition) < 50) {
+				a.show();
+			}
 		}
 
 		updatePerspective();
 
-		glfwPollEvents();
+		glfwWaitEvents();
 		glfwSwapBuffers(window);
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE)) {
 			glfwSetWindowShouldClose(window, 1);
