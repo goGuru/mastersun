@@ -256,6 +256,8 @@ float mpos_y = 0.0;
 int W = 1080;
 int H = 1080;
 
+float moveSpeed = 0.2f;
+
 glm::mat4 projectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
 glm::vec3 worldPosition = glm::vec3(0);
 glm::mat4 fullTransformMatrix;
@@ -263,8 +265,14 @@ GLint fullTransformMatrixUniformLocation;
 
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
-	mpos_x += xpos - W / 2;
-	mpos_y += ypos - H / 2;
+	// Next mouse Y position
+	float future_mpos_y = (mpos_y + (ypos - H / 2.0f));
+
+	if (!(future_mpos_y/H < -0.5f || future_mpos_y/H > 0.5f)) {
+		mpos_y += ypos - H / 2.0f;
+	}
+
+	mpos_x += xpos - W / 2.0f;
 
 	glfwSetCursorPos(window, W / 2, H / 2);
 
@@ -281,16 +289,14 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	float rand_rot_y = ((float)rand() / (RAND_MAX)) - 0.5f;
 	float rand_rot_z = ((float)rand() / (RAND_MAX)) - 0.5f;
 
-	float theta = (float)((mpos_y / H) * 3.1415 * 2);
-	float phi = -(float)((mpos_x / W) * 3.1415 * 2);
-
-	glm::vec3 lookVector = glm::vec3(
+	glm::vec3 lookVector = glm::normalize(glm::vec3(
 		{
 			fullTransformMatrix[0][2],
 			fullTransformMatrix[1][2],
 			fullTransformMatrix[2][2]
 		}
-	);
+	));
+	glm::vec3 strafeVector = lookVector;
 
 	switch (key) {
 	case GLFW_KEY_1: {
@@ -308,11 +314,25 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	case GLFW_KEY_LEFT:
 
 		break;
-	case GLFW_KEY_S:
-		worldPosition = worldPosition + lookVector;
-		break;
 	case GLFW_KEY_W:
-		worldPosition = worldPosition - lookVector;
+		worldPosition = worldPosition - moveSpeed * lookVector;
+		break;
+	case GLFW_KEY_A:
+		strafeVector.y = 0.0f;
+
+		strafeVector = glm::normalize(glm::cross(strafeVector, { 0, 1, 0 }));
+
+		worldPosition = worldPosition + moveSpeed * strafeVector;
+		break;
+	case GLFW_KEY_S:
+		worldPosition = worldPosition + moveSpeed * lookVector;
+		break;
+	case GLFW_KEY_D:
+		strafeVector.y = 0.0f;
+
+		strafeVector = - glm::normalize(glm::cross(strafeVector, { 0, 1, 0 }));
+
+		worldPosition = worldPosition + moveSpeed * strafeVector;
 		break;
 	case GLFW_KEY_SPACE:
 		cubes.clear();
@@ -326,8 +346,15 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 }
 
 void updatePerspective() {
-	glm::mat4 projectionTranslationMatrix = glm::rotate(projectionMatrix, (float)((mpos_y / H) * 3.1415 * 2 - 3.1415), glm::vec3(1, 0, 0));
-	projectionTranslationMatrix = glm::rotate(projectionTranslationMatrix, (float)((mpos_x / W) * 3.1415 * 2 - 3.1415), glm::vec3(0, 1, 0));
+	float verticalAngle = (float)((mpos_y / H) * 3.1415);
+	float horizontalAngle = (float)((mpos_x / W) * 3.1415);
+
+	if (verticalAngle > 3.1415 / 2.0f) {
+		verticalAngle = 3.1415 / 2.0f;
+	}
+
+	glm::mat4 projectionTranslationMatrix = glm::rotate(projectionMatrix, verticalAngle, glm::vec3(1, 0, 0));
+	projectionTranslationMatrix = glm::rotate(projectionTranslationMatrix, horizontalAngle, glm::vec3(0, 1, 0));
 
 	fullTransformMatrix = glm::translate(projectionTranslationMatrix, worldPosition);
 
