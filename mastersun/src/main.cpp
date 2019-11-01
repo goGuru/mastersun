@@ -208,7 +208,7 @@ public:
 			{0.0f, 1.0f,  0.0f},
 			{0.0f, 1.0f,  0.0f}
 		};
-		
+
 		/*Translating into initial position*/
 		for (auto& a : points) {
 			a = a + m_p;
@@ -258,11 +258,15 @@ int H = 1080;
 
 glm::mat4 projectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
 glm::vec3 worldPosition = glm::vec3(0);
+glm::mat4 fullTransformMatrix;
+GLint fullTransformMatrixUniformLocation;
 
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
-	mpos_x = xpos;
-	mpos_y = ypos;
+	mpos_x += xpos - W / 2;
+	mpos_y += ypos - H / 2;
+
+	glfwSetCursorPos(window, W / 2, H / 2);
 
 	std::cout << "X: " << xpos << " Y: " << ypos << std::endl;
 }
@@ -276,6 +280,17 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	float rand_rot_x = ((float)rand() / (RAND_MAX)) - 0.5f;
 	float rand_rot_y = ((float)rand() / (RAND_MAX)) - 0.5f;
 	float rand_rot_z = ((float)rand() / (RAND_MAX)) - 0.5f;
+
+	float theta = (float)((mpos_y / H) * 3.1415 * 2);
+	float phi = -(float)((mpos_x / W) * 3.1415 * 2);
+
+	glm::vec3 lookVector = glm::vec3(
+		{
+			fullTransformMatrix[0][2],
+			fullTransformMatrix[1][2],
+			fullTransformMatrix[2][2]
+		}
+	);
 
 	switch (key) {
 	case GLFW_KEY_1: {
@@ -293,8 +308,11 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	case GLFW_KEY_LEFT:
 
 		break;
+	case GLFW_KEY_S:
+		worldPosition = worldPosition + lookVector;
+		break;
 	case GLFW_KEY_W:
-		worldPosition = worldPosition + glm::vec3({0, 0, 0.2f});
+		worldPosition = worldPosition - lookVector;
 		break;
 	case GLFW_KEY_SPACE:
 		cubes.clear();
@@ -308,12 +326,11 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 }
 
 void updatePerspective() {
-	glm::mat4 projectionTranslationMatrix = glm::rotate(projectionMatrix, (float)((mpos_y / H) * 3.1415*2 - 3.1415), glm::vec3(1, 0, 0));
-	projectionTranslationMatrix = glm::rotate(projectionTranslationMatrix, (float)((mpos_x / W) * 3.1415*2 - 3.1415), glm::vec3(0, 1, 0));
+	glm::mat4 projectionTranslationMatrix = glm::rotate(projectionMatrix, (float)((mpos_y / H) * 3.1415 * 2 - 3.1415), glm::vec3(1, 0, 0));
+	projectionTranslationMatrix = glm::rotate(projectionTranslationMatrix, (float)((mpos_x / W) * 3.1415 * 2 - 3.1415), glm::vec3(0, 1, 0));
 
-	glm::mat4 fullTransformMatrix = glm::translate(projectionTranslationMatrix, worldPosition);
+	fullTransformMatrix = glm::translate(projectionTranslationMatrix, worldPosition);
 
-	GLint fullTransformMatrixUniformLocation = glGetUniformLocation(shaderProgram, "fullTransformMatrix");
 	glUniformMatrix4fv(fullTransformMatrixUniformLocation, 1, GL_FALSE, &fullTransformMatrix[0][0]);
 }
 
@@ -360,17 +377,17 @@ int main() {
 
 	int row = 0;
 	int col = 0;
-	int cols = 6;
+	int cols = 12;
 
 	std::vector<quad> quads;
 
-	for (int i = 0; i < 2000; i++) {
+	for (int i = 0; i < 200; i++) {
 		quad newQuad;
 		if (i % cols == 0) {
 			row++;
 		};
 
-		newQuad.m_pos = { (i % cols) * 1.1 - cols/2, -3, -row*1.1 };
+		newQuad.m_pos = { (i % cols) * 1.1 - cols / 2, -3, -row * 1.1 };
 		newQuad.genVertex(1);
 		newQuad.genColor({ ((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f });
 
@@ -406,12 +423,14 @@ int main() {
 	shaderProgram = glCreateProgram();
 	glAttachShader(shaderProgram, fs);
 	glAttachShader(shaderProgram, vs);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
 	// insert location binding code here
 	glBindAttribLocation(shaderProgram, 0, "vertex_position");
 	glBindAttribLocation(shaderProgram, 1, "vertex_colour");
 
 	glLinkProgram(shaderProgram);
+	fullTransformMatrixUniformLocation = glGetUniformLocation(shaderProgram, "fullTransformMatrix");
 
 	//
 
