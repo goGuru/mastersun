@@ -256,18 +256,13 @@ float mpos_y = 0.0;
 int W = 1080;
 int H = 1080;
 
+glm::mat4 projectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
+glm::vec3 worldPosition = glm::vec3(0);
+
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
 	mpos_x = xpos;
 	mpos_y = ypos;
-
-	glm::mat4 projectionMatrix = glm::perspective(90.0f, ((float)W / (float)H), 0.2f, 100.0f);
-	glm::mat4 projectionTranslationMatrix = glm::translate(projectionMatrix, glm::vec3(0.0f, 0.0f, -3.0f));
-	projectionTranslationMatrix = glm::rotate(projectionTranslationMatrix, (float)((mpos_y / H) * 3.1415 * 2 - 3.1415), glm::vec3(1, 0, 0));
-	glm::mat4 fullTransformMatrix = glm::rotate(projectionTranslationMatrix, (float)((mpos_x / W) * 3.1415 * 2 - 3.1415), glm::vec3(0, 1, 0));
-
-	GLint fullTransformMatrixUniformLocation = glGetUniformLocation(shaderProgram, "fullTransformMatrix");
-	glUniformMatrix4fv(fullTransformMatrixUniformLocation, 1, GL_FALSE, &fullTransformMatrix[0][0]);
 
 	std::cout << "X: " << xpos << " Y: " << ypos << std::endl;
 }
@@ -298,6 +293,9 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	case GLFW_KEY_LEFT:
 
 		break;
+	case GLFW_KEY_W:
+		worldPosition = worldPosition + glm::vec3({0, 0, 0.2f});
+		break;
 	case GLFW_KEY_SPACE:
 		cubes.clear();
 		break;
@@ -309,6 +307,16 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 		glfwSetWindowShouldClose(window, GL_TRUE);
 }
 
+void updatePerspective() {
+	glm::mat4 projectionTranslationMatrix = glm::rotate(projectionMatrix, (float)((mpos_y / H) * 3.1415*2 - 3.1415), glm::vec3(1, 0, 0));
+	projectionTranslationMatrix = glm::rotate(projectionTranslationMatrix, (float)((mpos_x / W) * 3.1415*2 - 3.1415), glm::vec3(0, 1, 0));
+
+	glm::mat4 fullTransformMatrix = glm::translate(projectionTranslationMatrix, worldPosition);
+
+	GLint fullTransformMatrixUniformLocation = glGetUniformLocation(shaderProgram, "fullTransformMatrix");
+	glUniformMatrix4fv(fullTransformMatrixUniformLocation, 1, GL_FALSE, &fullTransformMatrix[0][0]);
+}
+
 int main() {
 	srand(time(NULL));
 
@@ -317,12 +325,6 @@ int main() {
 		fprintf(stderr, "ERROR: could not start GLFW3\n");
 		return 1;
 	}
-
-	// uncomment these lines if on Apple OS X
-	/*glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);*/
 
 	GLFWwindow* window = glfwCreateWindow(W, H, "Cube test", NULL, NULL);
 	if (!window) {
@@ -368,9 +370,9 @@ int main() {
 			row++;
 		};
 
-		newQuad.m_pos = { (i % cols) * 1.1 - cols/2, 1, -row*1.1 };
+		newQuad.m_pos = { (i % cols) * 1.1 - cols/2, -3, -row*1.1 };
 		newQuad.genVertex(1);
-		newQuad.genColor({ 1,0,0 });
+		newQuad.genColor({ ((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f });
 
 		quads.push_back(newQuad);
 	}
@@ -439,23 +441,12 @@ int main() {
 		glUseProgram(shaderProgram);
 		glBindVertexArray(vao);
 
-		/*rotY(points, sizeof(points) / sizeof(float), 0.02);
-		rotZ(points, sizeof(points) / sizeof(float), 0.02);
-		rotX(points, sizeof(points) / sizeof(float), 0.02);
-
-		glBindBuffer(GL_ARRAY_BUFFER, points_vbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
-
-		glBindBuffer(GL_ARRAY_BUFFER, colours_vbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(colours), colours, GL_STATIC_DRAW);*/
 
 		for (quad& a : quads) {
 			a.show();
 		}
 
-		/*c.update();
-
-		glDrawArrays(GL_TRIANGLES, 0, c.getNumberOfPoints());*/
+		updatePerspective();
 
 		glfwPollEvents();
 		glfwSwapBuffers(window);
