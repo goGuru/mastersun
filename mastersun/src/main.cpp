@@ -13,6 +13,9 @@
 #include <glm/mat4x4.hpp> // glm::mat4
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 
+#include "quad.hpp"
+#include <block.hpp>
+
 GLuint shaderProgram;
 class cube;
 
@@ -29,55 +32,6 @@ public:
 	float m_yaw;
 
 	phys() {};
-};
-
-class quad {
-public:
-	glm::vec3 m_pos;
-	GLuint m_pvbo;
-	GLuint m_cvbo;
-	glm::vec3 m_points[4];
-	glm::vec3 m_colors[4];
-
-	quad() {
-		glGenBuffers(1, &m_pvbo);
-		glGenBuffers(1, &m_cvbo);
-	}
-
-	void genVertex(uint8_t size) {
-		m_points[0] = { 0, 0, 0 };
-		m_points[1] = { size, 0 , 0 };
-		m_points[2] = { size, 0, size };
-		m_points[3] = { 0, 0, size };
-
-		/*Translating into initial position*/
-		for (auto& a : m_points) {
-			a = a + m_pos;
-		}
-	}
-
-	void genColor(glm::vec3 color) {
-		m_colors[0] = color;
-		m_colors[1] = color;
-		m_colors[2] = color;
-		m_colors[3] = color;
-	}
-
-	void show() {
-		glBindBuffer(GL_ARRAY_BUFFER, m_pvbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(m_points), m_points, GL_STATIC_DRAW);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_cvbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(m_colors), m_colors, GL_STATIC_DRAW);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_pvbo);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_cvbo);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-		glDrawArrays(GL_QUADS, 0, 4);
-	}
 };
 
 class cube : phys {
@@ -256,7 +210,7 @@ float mpos_y = 0.0;
 int W = 1080;
 int H = 1080;
 
-float moveSpeed = 0.2f;
+float moveSpeed = 1.0f;
 
 glm::mat4 projectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
 glm::vec3 worldPosition = glm::vec3(0);
@@ -405,31 +359,31 @@ int main() {
 
 	int row = 0;
 	int col = 0;
-	int cols = 100;
+	int cols = 126;
 
-	std::vector<quad> quads;
+	std::vector<block> blocks;
 
-	for (int i = 0; i < 20000; i++) {
-		quad newQuad;
+	for (int i = 0; i < 16000; i++) {
+		block newBlock;
 		if (i % cols == 0) {
 			row++;
 		};
 
-		newQuad.m_pos = { (i % cols) * 1.1 - cols / 2, -3, -row * 1.1 };
-		newQuad.genVertex(1);
-		newQuad.genColor({ ((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f });
+		newBlock.m_pos = { (i % cols) - cols / 2, 0.0f, -row };
+		newBlock.genVertex(1);
+		newBlock.genColor({ ((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f });
 
-		quads.push_back(newQuad);
+		blocks.push_back(newBlock);
 	}
 
 	const char* vertex_shader =
 		"#version 400\n"
 		"layout(location = 0) in vec3 vertex_position;"
-		"layout(location = 1) in vec3 vertex_colour;"
+		"layout(location = 1) in vec3 vertex_color;"
 		"uniform mat4 fullTransformMatrix;"
 		"out vec3 colour;"
 		"void main() {"
-		"	colour = vertex_colour;"
+		"	colour = vertex_color;"
 		"	gl_Position = fullTransformMatrix * vec4(vertex_position, 1.0);"
 		"};";
 
@@ -455,7 +409,7 @@ int main() {
 
 	// insert location binding code here
 	glBindAttribLocation(shaderProgram, 0, "vertex_position");
-	glBindAttribLocation(shaderProgram, 1, "vertex_colour");
+	glBindAttribLocation(shaderProgram, 1, "vertex_color");
 
 	glLinkProgram(shaderProgram);
 	fullTransformMatrixUniformLocation = glGetUniformLocation(shaderProgram, "fullTransformMatrix");
@@ -474,7 +428,7 @@ int main() {
 
 	int loops = 0;
 
-	int timeStepMs = 10;
+	int timeStepMs = 2;
 
 	while (!glfwWindowShouldClose(window)) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -489,8 +443,8 @@ int main() {
 		glBindVertexArray(vao);
 
 
-		for (quad& a : quads) {
-			if (glm::distance(a.m_pos, -worldPosition) < 50) {
+		for (block& a : blocks) {
+			if (glm::distance(a.m_pos, -worldPosition) < 100) {
 				a.show();
 			}
 		}
