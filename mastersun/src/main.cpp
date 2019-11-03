@@ -16,195 +16,19 @@
 #include "quad.hpp"
 #include <block.hpp>
 
+#define HEIGHT 20
+#define WIDTH 20
+#define DEPTH 20
+
+enum BLOCK_TYPES {
+	EARTH,
+	WATER
+};
+
 GLuint shaderProgram;
-class cube;
 
-std::vector<cube> cubes;
+std::vector<std::vector<std::vector<block*>>> blocks;
 
-class phys {
-public:
-	glm::vec3 m_p;
-	glm::vec3 m_v;
-	glm::vec3 m_a;
-
-	float m_roll;
-	float m_pitch;
-	float m_yaw;
-
-	phys() {};
-};
-
-class cube : phys {
-private:
-	glm::vec3 m_points[36];
-	glm::vec3 m_colours[36];
-
-	GLuint m_pvbo;
-	GLuint m_cvbo;
-
-	static int nrOfCubes;
-	int m_id;
-public:
-	cube(glm::vec3 pos) {
-		m_pvbo = m_id;
-		m_cvbo = m_id;
-
-		glGenBuffers(1, &m_pvbo);
-		glGenBuffers(1, &m_cvbo);
-
-		m_p = pos;
-		m_id = nrOfCubes++;
-
-		/*Predefined points of cube*/
-		glm::vec3 points[36] = {
-			{-1.0f,-1.0f,-1.0f}, // triangle 1 : begin
-			{-1.0f,-1.0f, 1.0f},
-			{-1.0f, 1.0f, 1.0f}, // triangle 1 : end
-			{1.0f, 1.0f,-1.0f}, // triangle 2 : begin
-			{-1.0f,-1.0f,-1.0f},
-			{-1.0f, 1.0f,-1.0f}, // triangle 2 : end
-			{1.0f,-1.0f, 1.0f},
-			{-1.0f,-1.0f,-1.0f},
-			{1.0f,-1.0f,-1.0f},
-			{1.0f, 1.0f,-1.0f},
-			{1.0f,-1.0f,-1.0f},
-			{-1.0f,-1.0f,-1.0f},
-			{-1.0f,-1.0f,-1.0f},
-			{-1.0f, 1.0f, 1.0f},
-			{-1.0f, 1.0f,-1.0f},
-			{1.0f,-1.0f, 1.0f},
-			{-1.0f,-1.0f, 1.0f},
-			{-1.0f,-1.0f,-1.0f},
-			{-1.0f, 1.0f, 1.0f},
-			{-1.0f,-1.0f, 1.0f},
-			{1.0f,-1.0f, 1.0f},
-			{1.0f, 1.0f, 1.0f},
-			{1.0f,-1.0f,-1.0f},
-			{1.0f, 1.0f,-1.0f},
-			{1.0f,-1.0f,-1.0f},
-			{1.0f, 1.0f, 1.0f},
-			{1.0f,-1.0f, 1.0f},
-			{1.0f, 1.0f, 1.0f},
-			{1.0f, 1.0f,-1.0f},
-			{-1.0f, 1.0f,-1.0f},
-			{1.0f, 1.0f, 1.0f},
-			{-1.0f, 1.0f,-1.0f},
-			{-1.0f, 1.0f, 1.0f},
-			{1.0f, 1.0f, 1.0f},
-			{-1.0f, 1.0f, 1.0f},
-			{1.0f,-1.0f, 1.0f}
-		};
-
-		/*Scaler*/
-		for (auto& a : points) {
-			a = a * 0.2f;
-		}
-
-		/*Predefined colors of cube*/
-		glm::vec3 colours[36] = {
-			/*1.first*/
-			{0.0f, 0.0f,  1.0f},
-			{0.0f, 0.0f,  1.0f},
-			{0.0f, 0.0f,  1.0f},
-
-			/*2.first*/
-			{0.0f, 1.0f,  0.0f},
-			{0.0f, 1.0f,  0.0f},
-			{0.0f, 1.0f,  0.0f},
-
-			/*3.first*/
-			{1.0f, 0.0f,  0.0f},
-			{1.0f, 0.0f,  0.0f},
-			{1.0f, 0.0f,  0.0f},
-
-			/*2.last*/
-			{0.0f, 1.0f,  0.0f},
-			{0.0f, 1.0f,  0.0f},
-			{0.0f, 1.0f,  0.0f},
-
-			/*1.last*/
-			{0.0f, 0.0f,  1.0f},
-			{0.0f, 0.0f,  1.0f},
-			{0.0f, 0.0f,  1.0f},
-
-			/*3.last*/
-			{1.0f, 0.0f,  0.0f},
-			{1.0f, 0.0f,  0.0f},
-			{1.0f, 0.0f,  0.0f},
-
-			/*4.first*/
-			{0.0f, 1.0f,  0.0f},
-			{0.0f, 1.0f,  0.0f},
-			{0.0f, 1.0f,  0.0f},
-
-			/*5.first*/
-			{0.0f, 0.0f,  1.0f},
-			{0.0f, 0.0f,  1.0f},
-			{0.0f, 0.0f,  1.0f},
-
-			/*5.last*/
-			{0.0f, 0.0f,  1.0f},
-			{0.0f, 0.0f,  1.0f},
-			{0.0f, 0.0f,  1.0f},
-
-			/*6.first*/
-			{1.0f, 0.0f,  0.0f},
-			{1.0f, 0.0f,  0.0f},
-			{1.0f, 0.0f,  0.0f},
-
-			/*6.last*/
-			{1.0f, 0.0f,  0.0f},
-			{1.0f, 0.0f,  0.0f},
-			{1.0f, 0.0f,  0.0f},
-
-			/*4.last*/
-			{0.0f, 1.0f,  0.0f},
-			{0.0f, 1.0f,  0.0f},
-			{0.0f, 1.0f,  0.0f}
-		};
-
-		/*Translating into initial position*/
-		for (auto& a : points) {
-			a = a + m_p;
-		}
-
-		memcpy(m_points, points, sizeof(points));
-		memcpy(m_colours, colours, sizeof(colours));
-	}
-
-	int getNumberOfPoints() {
-		return sizeof(m_points) / sizeof(float);
-	}
-
-	static int getNumberOfCubes() {
-		return nrOfCubes;
-	}
-
-	void setPos(float x, float y, float z) {
-		m_p[0] = x;
-		m_p[1] = y;
-		m_p[2] = z;
-	}
-
-	void show() {
-		glBindBuffer(GL_ARRAY_BUFFER, m_pvbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(m_points), m_points, GL_STATIC_DRAW);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_cvbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(m_colours), m_colours, GL_STATIC_DRAW);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_pvbo);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_cvbo);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-		glDrawArrays(GL_TRIANGLES, 0, getNumberOfPoints() / 3);
-	}
-};
-
-
-int cube::nrOfCubes = 0;
 float mpos_x = 0.0;
 float mpos_y = 0.0;
 int W = 1080;
@@ -212,10 +36,13 @@ int H = 1080;
 
 float moveSpeed = 1.0f;
 
-glm::mat4 projectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
+glm::mat4 projectionMatrix = glm::perspective(45.0f, (float)W / (float)H, 0.1f, 100.f);
 glm::vec3 worldPosition = glm::vec3(0);
 glm::mat4 fullTransformMatrix;
+
+glm::vec3 lightPos = {10,10,0};
 GLint fullTransformMatrixUniformLocation;
+GLint lightPosLocation;
 
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
@@ -251,19 +78,14 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 		}
 	));
 	glm::vec3 strafeVector = lookVector;
-	std::cout << "@@@@@@@@@@" << std::endl;
 
 	switch (key) {
 	case GLFW_KEY_1: {
-		cube tmp_cube({ rand_x, rand_y , rand_z });
 
-		cubes.push_back(tmp_cube);
 	}
 					 break;
 	case GLFW_KEY_2: {
-		cube tmp_cube({ (mpos_x / (float)W) * 2.0f - 1.0f, 1.0f - (mpos_y / (float)H) * 2.0f, 0.0f });
 
-		cubes.push_back(tmp_cube);
 	}
 					 break;
 	case GLFW_KEY_LEFT:
@@ -290,7 +112,7 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 		worldPosition = worldPosition + moveSpeed * strafeVector;
 		break;
 	case GLFW_KEY_SPACE:
-		cubes.clear();
+
 		break;
 	default:
 		break;
@@ -314,6 +136,7 @@ void updatePerspective() {
 	fullTransformMatrix = glm::translate(projectionTranslationMatrix, worldPosition);
 
 	glUniformMatrix4fv(fullTransformMatrixUniformLocation, 1, GL_FALSE, &fullTransformMatrix[0][0]);
+	glUniform3fv(lightPosLocation, sizeof(lightPos), (float*)&lightPos);
 }
 
 int main() {
@@ -356,43 +179,60 @@ int main() {
 
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
 
 	int row = 0;
 	int col = 0;
 	int cols = 126;
 
-	std::vector<block> blocks;
+	// Set up sizes. (HEIGHT x WIDTH)
+	blocks.resize(HEIGHT);
+	for (int i = 0; i < HEIGHT; ++i) {
+		blocks[i].resize(WIDTH);
 
-	for (int i = 0; i < 16000; i++) {
-		block newBlock;
-		if (i % cols == 0) {
-			row++;
-		};
+		for (int j = 0; j < WIDTH; ++j)
+			blocks[i][j].resize(DEPTH);
+	}
 
-		newBlock.m_pos = { (i % cols) - cols / 2, 0.0f, -row };
-		newBlock.genVertex(1);
-		newBlock.genColor({ ((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f });
-
-		blocks.push_back(newBlock);
+	for (int row = 0; row < blocks.size(); row++) {
+		for (int col = 0; col < blocks[row].size(); col++) {
+			for (int dep = 0; dep < blocks[row][col].size(); dep++) {
+				blocks[row][col][dep] = new block({ row, col, dep });
+				blocks[row][col][dep]->genColor({ ((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f });
+			}
+		}
 	}
 
 	const char* vertex_shader =
 		"#version 400\n"
 		"layout(location = 0) in vec3 vertex_position;"
 		"layout(location = 1) in vec3 vertex_color;"
+		"layout(location = 2) in vec3 vertex_normal;"
 		"uniform mat4 fullTransformMatrix;"
-		"out vec3 colour;"
+		"out vec3 fragPos;"
+		"out vec3 color;"
+		"out vec3 normal;"
 		"void main() {"
-		"	colour = vertex_color;"
 		"	gl_Position = fullTransformMatrix * vec4(vertex_position, 1.0);"
+		"	fragPos = vertex_position;"
+		"	color = vertex_color;"
+		"	normal = vertex_normal;"
 		"};";
 
 	const char* fragment_shader =
 		"#version 400\n"
-		"in vec3 colour;"
-		"out vec4 frag_colour;"
+		"in vec3 fragPos;"
+		"in vec3 color;"
+		"in vec3 normal;"
+		"uniform vec3 lightPos;"
+		"out vec4 fragColor;"
 		"void main() {"
-		"	frag_colour = vec4(colour, 1.0);"
+		"   vec3 norm = normalize(normal);"
+		"   vec3 lightDir = normalize(lightPos - fragPos);"
+		"   float diff = max(dot(norm, lightDir), 0.0);"
+		"   vec3 diffuse = diff * color;"
+		"   vec3 result = (0.5 + diffuse) * color;"
+		"	fragColor = vec4(result, 1.0);"
 		"};";
 
 	GLuint vs = glCreateShader(GL_VERTEX_SHADER);
@@ -403,16 +243,18 @@ int main() {
 	glCompileShader(fs);
 
 	shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, fs);
 	glAttachShader(shaderProgram, vs);
+	glAttachShader(shaderProgram, fs);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
 	// insert location binding code here
 	glBindAttribLocation(shaderProgram, 0, "vertex_position");
 	glBindAttribLocation(shaderProgram, 1, "vertex_color");
+	glBindAttribLocation(shaderProgram, 2, "vertex_normal");
 
 	glLinkProgram(shaderProgram);
 	fullTransformMatrixUniformLocation = glGetUniformLocation(shaderProgram, "fullTransformMatrix");
+	lightPosLocation = glGetUniformLocation(shaderProgram, "lightPos");
 
 	//
 
@@ -442,10 +284,11 @@ int main() {
 		glUseProgram(shaderProgram);
 		glBindVertexArray(vao);
 
-
-		for (block& a : blocks) {
-			if (glm::distance(a.m_pos, -worldPosition) < 100) {
-				a.show();
+		for (int row = 0; row < blocks.size(); row++) {
+			for (int col = 0; col < blocks[row].size(); col++) {
+				for (int dep = 0; dep < blocks[row][col].size(); dep++) {
+					blocks[row][col][dep]->show();
+				}
 			}
 		}
 
