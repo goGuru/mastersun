@@ -12,17 +12,14 @@ public:
 	glm::vec3 m_pos;
 	GLuint m_pvbo;
 	GLuint m_cvbo;
-	GLuint m_nvbo;
 	glm::vec3 m_points[36];
 	glm::vec3 m_colors[36];
-	glm::vec3 m_normals[36];
 	bool m_needsUpdate = true;
 
 	block(glm::vec3 pos = { 0,0,0 }) {
 		m_pos = pos;
 		glGenBuffers(1, &m_pvbo);
 		glGenBuffers(1, &m_cvbo);
-		glGenBuffers(1, &m_nvbo);
 		genVertex(1);
 	}
 
@@ -154,7 +151,6 @@ public:
 
 		memcpy(m_points, points, sizeof(points));
 		memcpy(m_colors, colors, sizeof(colors));
-		memcpy(m_normals, normals, sizeof(normals));
 	}
 
 	void genColor(glm::vec3 color) {
@@ -171,9 +167,6 @@ public:
 			glBindBuffer(GL_ARRAY_BUFFER, m_cvbo);
 			glBufferData(GL_ARRAY_BUFFER, sizeof(m_colors), m_colors, GL_STATIC_DRAW);
 
-			glBindBuffer(GL_ARRAY_BUFFER, m_nvbo);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(m_normals), m_normals, GL_STATIC_DRAW);
-
 			m_needsUpdate = false;
 		}
 
@@ -182,9 +175,6 @@ public:
 
 		glBindBuffer(GL_ARRAY_BUFFER, m_cvbo);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_nvbo);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
 		glDrawArrays(GL_TRIANGLES, 0, sizeof(m_points)/sizeof(glm::vec3));
 	}

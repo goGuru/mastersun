@@ -15,6 +15,7 @@
 
 #include "quad.hpp"
 #include <block.hpp>
+#include <mesh.hpp>
 
 #define HEIGHT 20
 #define WIDTH 20
@@ -37,7 +38,7 @@ int H = 1080;
 float moveSpeed = 1.0f;
 
 glm::mat4 projectionMatrix = glm::perspective(45.0f, (float)W / (float)H, 0.1f, 100.f);
-glm::vec3 worldPosition = glm::vec3(0);
+glm::vec3 worldPosition = glm::vec3({-50,-10,-50});
 glm::mat4 fullTransformMatrix;
 
 glm::vec3 lightPos = {10,10,0};
@@ -179,7 +180,6 @@ int main() {
 
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
-	glEnableVertexAttribArray(2);
 
 	int row = 0;
 	int col = 0;
@@ -207,32 +207,19 @@ int main() {
 		"#version 400\n"
 		"layout(location = 0) in vec3 vertex_position;"
 		"layout(location = 1) in vec3 vertex_color;"
-		"layout(location = 2) in vec3 vertex_normal;"
 		"uniform mat4 fullTransformMatrix;"
-		"out vec3 fragPos;"
 		"out vec3 color;"
-		"out vec3 normal;"
 		"void main() {"
 		"	gl_Position = fullTransformMatrix * vec4(vertex_position, 1.0);"
-		"	fragPos = vertex_position;"
 		"	color = vertex_color;"
-		"	normal = vertex_normal;"
 		"};";
 
 	const char* fragment_shader =
 		"#version 400\n"
-		"in vec3 fragPos;"
 		"in vec3 color;"
-		"in vec3 normal;"
-		"uniform vec3 lightPos;"
 		"out vec4 fragColor;"
 		"void main() {"
-		"   vec3 norm = normalize(normal);"
-		"   vec3 lightDir = normalize(lightPos - fragPos);"
-		"   float diff = max(dot(norm, lightDir), 0.0);"
-		"   vec3 diffuse = diff * color;"
-		"   vec3 result = (0.5 + diffuse) * color;"
-		"	fragColor = vec4(result, 1.0);"
+		"	fragColor = vec4(color, 1.0);"
 		"};";
 
 	GLuint vs = glCreateShader(GL_VERTEX_SHADER);
@@ -272,6 +259,8 @@ int main() {
 
 	int timeStepMs = 2;
 
+	Mesh mesh({0,0,0}, 100, 100);
+
 	while (!glfwWindowShouldClose(window)) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -284,13 +273,7 @@ int main() {
 		glUseProgram(shaderProgram);
 		glBindVertexArray(vao);
 
-		for (int row = 0; row < blocks.size(); row++) {
-			for (int col = 0; col < blocks[row].size(); col++) {
-				for (int dep = 0; dep < blocks[row][col].size(); dep++) {
-					blocks[row][col][dep]->show();
-				}
-			}
-		}
+		mesh.show();
 
 		updatePerspective();
 
