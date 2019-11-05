@@ -129,6 +129,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="include\FastNoise.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -143,6 +144,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\block.hpp" />
+    <ClInclude Include="include\FastNoise.h" />
     <ClInclude Include="include\GLFW\glfw3.h" />
     <ClInclude Include="include\GLFW\glfw3native.h" />
     <ClInclude Include="include\GL\eglew.h" />
@@ -150,6 +152,7 @@
     <ClInclude Include="include\GL\glxew.h" />
     <ClInclude Include="include\GL\wglew.h" />
     <ClInclude Include="include\mesh.hpp" />
+    <ClInclude Include="include\PerlinNoise.hpp" />
     <ClInclude Include="include\player.hpp" />
     <ClInclude Include="include\quad.hpp" />
   </ItemGroup>

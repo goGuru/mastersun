@@ -6,6 +6,8 @@
 #include <glm/vec4.hpp> // glm::vec4
 #include <glm/mat4x4.hpp> // glm::mat4
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
+#include "PerlinNoise.hpp"
+#include "FastNoise.h"
 
 class Mesh {
 public:
@@ -17,6 +19,8 @@ public:
 
 	std::vector<glm::vec3> m_vertices;
 	std::vector<glm::vec3> m_colors;
+	siv::PerlinNoise m_perlin;
+	FastNoise fastNoise;
 
 	int m_rows;
 	int m_cols;
@@ -27,6 +31,7 @@ public:
 		m_pos = pos;
 		m_rows = rows;
 		m_cols = cols;
+		
 		glGenBuffers(1, &m_pvbo);
 		glGenBuffers(1, &m_cvbo);
 		glGenBuffers(1, &m_ebo);
@@ -37,9 +42,12 @@ public:
 	void genVertex() {
 		m_vertices.clear();
 		for (int x = 0; x < m_cols; x++) {
-			for (int y = 0; y < m_rows; y++) {
+			for (int z = 0; z < m_rows; z++) {
 				//m_vertices.push_back({ x, 0.0f , y });
-				m_vertices.push_back({ x,4.0f * ((float)rand() / (RAND_MAX)) - 0.5f ,y });
+
+				auto noise = fastNoise.GetNoise(x, z);
+
+				m_vertices.push_back({ x, noise*10 ,z });
 			}
 		}
 	}

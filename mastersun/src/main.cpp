@@ -37,7 +37,7 @@ int H = 1080;
 
 float moveSpeed = 1.0f;
 
-glm::mat4 projectionMatrix = glm::perspective(45.0f, (float)W / (float)H, 0.1f, 100.f);
+glm::mat4 projectionMatrix = glm::perspective(45.0f, (float)W / (float)H, 0.1f, 1000.f);
 glm::vec3 worldPosition = glm::vec3({-50,-10,-50});
 glm::mat4 fullTransformMatrix;
 
@@ -259,7 +259,7 @@ int main() {
 
 	int timeStepMs = 2;
 
-	Mesh mesh({0,0,0}, 100, 100);
+	Mesh mesh({0,0,0}, 1000, 1000);
 
 	while (!glfwWindowShouldClose(window)) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
