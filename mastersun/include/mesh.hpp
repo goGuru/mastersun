@@ -38,6 +38,7 @@ public:
 		m_vertices.clear();
 		for (int x = 0; x < m_cols; x++) {
 			for (int y = 0; y < m_rows; y++) {
+				//m_vertices.push_back({ x, 0.0f , y });
 				m_vertices.push_back({ x,4.0f * ((float)rand() / (RAND_MAX)) - 0.5f ,y });
 			}
 		}
@@ -60,27 +61,27 @@ public:
 	void show() {
 		if (m_needsUpdate) {
 			glBindBuffer(GL_ARRAY_BUFFER, m_pvbo);
-			glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(glm::vec3), m_vertices.data(), GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(glm::vec3), &m_vertices[0], GL_STATIC_DRAW);
 
 			glBindBuffer(GL_ARRAY_BUFFER, m_cvbo);
-			glBufferData(GL_ARRAY_BUFFER, m_colors.size() * sizeof(glm::vec3), m_colors.data(), GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, m_colors.size() * sizeof(glm::vec3), &m_colors[0], GL_STATIC_DRAW);
 
-			std::vector<uint32_t> indices;
+			std::vector<GLuint> indices;
 
 			for (int i = 0; i < m_rows * m_cols; i++) {
-				if (i % m_rows > m_rows - 1) continue;
-				if (i == m_rows * m_cols - 1) break;
+				if (i % m_rows > m_rows - 2) continue;
+				if (i == m_rows * m_cols - m_rows - 2) break;
 
 				indices.push_back(i);
-				indices.push_back(i + 1);
-				indices.push_back(i + m_rows);
 				indices.push_back(i + m_rows);
 				indices.push_back(i + 1);
+				indices.push_back(i + 1);
+				indices.push_back(i + m_rows);
 				indices.push_back(i + m_rows + 1);
 			}
 
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size()*sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices[0], GL_STATIC_DRAW);
 
 			m_needsUpdate = false;
 		}
