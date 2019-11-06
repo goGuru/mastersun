@@ -14,6 +14,7 @@ public:
 	glm::vec3 m_pos;
 	GLuint m_pvbo;
 	GLuint m_cvbo;
+	GLuint m_nvbo;
 
 	GLuint m_ebo;
 
@@ -37,6 +38,7 @@ public:
 		
 		glGenBuffers(1, &m_pvbo);
 		glGenBuffers(1, &m_cvbo);
+		glGenBuffers(1, &m_nvbo);
 		glGenBuffers(1, &m_ebo);
 		genVertex();
 		genColor({ 1,0,0 });
@@ -83,12 +85,14 @@ public:
 			m_normals[i + m_rows] = normal;
 			m_normals[i + m_rows + 1] = normal;
 		}
+
+
 	}
 
 	void genColor(glm::vec3 color) {
 		m_colors.clear();
 		for(int i = 0; i < m_vertices.size(); i += 6){
-			glm::vec3 color = { ((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f };
+			glm::vec3 color = { 243.0f/255.f , 154.0f / 255.f, 95.0f / 255.f };//{ ((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f };
 
 			m_colors.push_back(color);
 			m_colors.push_back(color);
@@ -107,6 +111,9 @@ public:
 			glBindBuffer(GL_ARRAY_BUFFER, m_cvbo);
 			glBufferData(GL_ARRAY_BUFFER, m_colors.size() * sizeof(glm::vec3), &m_colors[0], GL_STATIC_DRAW);
 
+			glBindBuffer(GL_ARRAY_BUFFER, m_nvbo);
+			glBufferData(GL_ARRAY_BUFFER, m_normals.size() * sizeof(glm::vec3), &m_normals[0], GL_STATIC_DRAW);
+
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(GLuint), &m_indices[0], GL_STATIC_DRAW);
 
@@ -118,6 +125,9 @@ public:
 
 		glBindBuffer(GL_ARRAY_BUFFER, m_cvbo);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_nvbo);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
 

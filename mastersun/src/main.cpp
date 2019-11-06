@@ -17,10 +17,6 @@
 #include <block.hpp>
 #include <mesh.hpp>
 
-#define HEIGHT 20
-#define WIDTH 20
-#define DEPTH 20
-
 enum BLOCK_TYPES {
 	EARTH,
 	WATER
@@ -40,6 +36,7 @@ float moveSpeed = 10.0f;
 glm::mat4 projectionMatrix = glm::perspective(45.0f, (float)W / (float)H, 0.1f, 1000.f);
 glm::vec3 worldPosition = glm::vec3({-50,-10,-50});
 glm::mat4 fullTransformMatrix;
+glm::mat4 modelMatrix;
 
 glm::vec3 lightPos = {10,10,0};
 GLint fullTransformMatrixUniformLocation;
@@ -180,46 +177,35 @@ int main() {
 
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
-
-	int row = 0;
-	int col = 0;
-	int cols = 126;
-
-	// Set up sizes. (HEIGHT x WIDTH)
-	blocks.resize(HEIGHT);
-	for (int i = 0; i < HEIGHT; ++i) {
-		blocks[i].resize(WIDTH);
-
-		for (int j = 0; j < WIDTH; ++j)
-			blocks[i][j].resize(DEPTH);
-	}
-
-	for (int row = 0; row < blocks.size(); row++) {
-		for (int col = 0; col < blocks[row].size(); col++) {
-			for (int dep = 0; dep < blocks[row][col].size(); dep++) {
-				blocks[row][col][dep] = new block({ row, col, dep });
-				blocks[row][col][dep]->genColor({ ((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f,((float)rand() / (RAND_MAX)) - 0.5f });
-			}
-		}
-	}
+	glEnableVertexAttribArray(2);
 
 	const char* vertex_shader =
 		"#version 400\n"
 		"layout(location = 0) in vec3 vertex_position;"
 		"layout(location = 1) in vec3 vertex_color;"
+		"layout(location = 2) in vec3 vertex_normal;"
 		"uniform mat4 fullTransformMatrix;"
 		"out vec3 color;"
+		"out vec3 normal;"
+		"out vec3 position;"
 		"void main() {"
 		"	gl_Position = fullTransformMatrix * vec4(vertex_position, 1.0);"
 		"	color = vertex_color;"
+		"	normal = vertex_normal;"
+		"	position = vertex_position;"
 		"};";
 
 	const char* fragment_shader =
 		"#version 400\n"
 		"in vec3 color;"
+		"in vec3 normal;"
+		"in vec3 position;"
+		"uniform vec3 lightPos;"
 		"out vec4 fragColor;"
 		"void main() {"
-		"	fragColor = vec4(color, 1.0);"
+		"vec3 lightDir = normalize(lightPos - position);  "
+		"float diff = max(dot(normal, lightDir), 0.0);"
+		"	fragColor = vec4(diff*color, 1.0);"
 		"};";
 
 	GLuint vs = glCreateShader(GL_VERTEX_SHADER);
