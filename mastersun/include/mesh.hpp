@@ -19,6 +19,9 @@ public:
 
 	std::vector<glm::vec3> m_vertices;
 	std::vector<glm::vec3> m_colors;
+	std::vector<glm::vec3> m_normals;
+	std::vector<GLuint> m_indices;
+
 	siv::PerlinNoise m_perlin;
 	FastNoise fastNoise;
 
@@ -41,6 +44,9 @@ public:
 
 	void genVertex() {
 		m_vertices.clear();
+		m_indices.clear();
+		m_normals = m_vertices;
+
 		for (int x = 0; x < m_cols; x++) {
 			for (int z = 0; z < m_rows; z++) {
 				//m_vertices.push_back({ x, 0.0f , y });
@@ -48,7 +54,34 @@ public:
 				auto noise = fastNoise.GetNoise(x, z);
 
 				m_vertices.push_back({ x, noise*10 ,z });
+				m_normals.push_back(glm::vec3(0));
 			}
+		}
+
+		// Genererar index för indexarrayen samt normaler till alla punkter
+		for (int i = 0; i < m_vertices.size(); i++) {
+			if (i % m_rows > m_rows - 2) continue;
+			if (i == m_rows * m_cols - m_rows - 2) break;
+
+			m_indices.push_back(i);
+			m_indices.push_back(i + m_rows);
+			m_indices.push_back(i + 1);
+
+			glm::vec3 normal = glm::normalize(glm::cross(m_vertices[i] - m_vertices[i + m_rows], m_vertices[i + 1] - m_vertices[i]));
+
+			m_normals[i] = normal;
+			m_normals[i + m_rows] = normal;
+			m_normals[i + 1] = normal;
+
+			m_indices.push_back(i + 1);
+			m_indices.push_back(i + m_rows);
+			m_indices.push_back(i + m_rows + 1);
+
+			normal = glm::normalize(glm::cross(m_vertices[i + 1] - m_vertices[i + m_rows], m_vertices[i + m_rows + 1] - m_vertices[i + 1]));
+
+			m_normals[i + 1] = normal;
+			m_normals[i + m_rows] = normal;
+			m_normals[i + m_rows + 1] = normal;
 		}
 	}
 
@@ -74,22 +107,8 @@ public:
 			glBindBuffer(GL_ARRAY_BUFFER, m_cvbo);
 			glBufferData(GL_ARRAY_BUFFER, m_colors.size() * sizeof(glm::vec3), &m_colors[0], GL_STATIC_DRAW);
 
-			std::vector<GLuint> indices;
-
-			for (int i = 0; i < m_rows * m_cols; i++) {
-				if (i % m_rows > m_rows - 2) continue;
-				if (i == m_rows * m_cols - m_rows - 2) break;
-
-				indices.push_back(i);
-				indices.push_back(i + m_rows);
-				indices.push_back(i + 1);
-				indices.push_back(i + 1);
-				indices.push_back(i + m_rows);
-				indices.push_back(i + m_rows + 1);
-			}
-
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices[0], GL_STATIC_DRAW);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(GLuint), &m_indices[0], GL_STATIC_DRAW);
 
 			m_needsUpdate = false;
 		}
